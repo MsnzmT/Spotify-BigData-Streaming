@@ -1,10 +1,39 @@
 version: '3.8'
 
 services:
+
+  broker:
+    image: confluentinc/cp-kafka:latest
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      #KAFKA_KRAFT_MODE: "true"  # This enables KRaft mode in Kafka.
+      KAFKA_PROCESS_ROLES: controller,broker  # Kafka acts as both broker and controller.
+      KAFKA_NODE_ID: 1  # A unique ID for this Kafka instance.
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@broker:9093"  # Defines the controller voters.
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092
+      KAFKA_LOG_DIRS: /var/lib/kafka/data  # Where Kafka stores its logs.
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"  # Kafka will automatically create topics if needed.
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1  # Since we’re running one broker, one replica is enough.
+      KAFKA_LOG_RETENTION_HOURS: 168  # Keep logs for 7 days.
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0  # No delay for consumer rebalancing.
+      CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"  # A unique ID for the Kafka cluster.
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server=broker:9092", "--list"]
+      interval: 10s
+      retries: 5
+    volumes:
+      #- /var/run/docker.sock:/var/run/docker.sock
+      - ../kafka/kafka-data:/var/lib/kafka/data  # Store Kafka logs on your local machine.
   eventsim:
     image: khoramism/event-generator-eventsim:1.2
     environment:
-      BOOTSTRAP_SERVERS: broker:29092
+      BOOTSTRAP_SERVERS: broker:9092
       SECURITY_PROTOCOL: PLAINTEXT
       SASL_JAAS_CONFIG: ''
       SASL_MECHANISM: ''
@@ -13,9 +42,26 @@ services:
       KEY_SERIALIZER: org.apache.kafka.common.serialization.ByteArraySerializer
       VALUE_SERIALIZER: org.apache.kafka.common.serialization.ByteArraySerializer
       ACKS: all
-    command: >
-      ./bin/eventsim -c configs/Guitar-config.json --continuous 
-      --from 200 --nusers 2000 -k 1
+    command: ./bin/eventsim -c configs/Guitar-config.json --continuous --from 200 --nusers 2000 -k 1
     depends_on:
       broker:
         condition: service_healthy
+
+  akhq:
+    image: tchiotludo/akhq:latest
+    container_name: akhq
+    ports:
+      - "8080:8080"
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            kafka-cluster:
+              properties:
+                bootstrap.servers: "broker:9092"
+    depends_on:
+      broker:
+        condition: service_healthy
+
+volumes:
+  kafka-data:
