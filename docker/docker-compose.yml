@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  eventsim:
+    image: khoramism/event-generator-eventsim:1.2
+    environment:
+      BOOTSTRAP_SERVERS: broker:29092
+      SECURITY_PROTOCOL: PLAINTEXT
+      SASL_JAAS_CONFIG: ''
+      SASL_MECHANISM: ''
+      CLIENT_DNS_LOOKUP: use_all_dns_ips
+      SESSION_TIMEOUT_MS: 45000
+      KEY_SERIALIZER: org.apache.kafka.common.serialization.ByteArraySerializer
+      VALUE_SERIALIZER: org.apache.kafka.common.serialization.ByteArraySerializer
+      ACKS: all
+    command: >
+      ./bin/eventsim -c configs/Guitar-config.json --continuous 
+      --from 200 --nusers 2000 -k 1
+    depends_on:
+      broker:
+        condition: service_healthy
