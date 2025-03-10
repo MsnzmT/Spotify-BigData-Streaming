@@ -1,0 +1,224 @@
+version: '3.8'
+
+services:
+
+  broker:
+    image: apache/kafka:latest
+    hostname: broker
+    container_name: broker
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      #KAFKA_KRAFT_MODE: "true"  # This enables KRaft mode in Kafka.
+      KAFKA_PROCESS_ROLES: controller,broker  # Kafka acts as both broker and controller.
+      KAFKA_NODE_ID: 1  # A unique ID for this Kafka instance.
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@broker:9093"  # Defines the controller voters.
+      KAFKA_LISTENERS: PLAINTEXT://broker:9092,CONTROLLER://broker:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092
+      KAFKA_LOG_DIRS: /var/lib/kafka/data  # Where Kafka stores its logs.
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"  # Kafka will automatically create topics if needed.
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1  # Since we’re running one broker, one replica is enough.
+      KAFKA_LOG_RETENTION_HOURS: 168  # Keep logs for 7 days.
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0  # No delay for consumer rebalancing.
+      CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"  # A unique ID for the Kafka cluster.
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server=broker:9092", "--list"]
+      interval: 10s
+      retries: 5
+    volumes:
+      #- /var/run/docker.sock:/var/run/docker.sock
+      - ../kafka/:/var/lib/kafka/data  # Store Kafka logs on your local machine.
+    networks:
+      - data-highway
+  eventsim:
+    image: khoramism/event-generator-eventsim:1.2
+    environment:
+      BOOTSTRAP_SERVERS: broker:9092
+      SECURITY_PROTOCOL: PLAINTEXT
+      SASL_JAAS_CONFIG: ''
+      SASL_MECHANISM: ''
+      CLIENT_DNS_LOOKUP: use_all_dns_ips
+      SESSION_TIMEOUT_MS: 45000
+      KEY_SERIALIZER: org.apache.kafka.common.serialization.ByteArraySerializer
+      VALUE_SERIALIZER: org.apache.kafka.common.serialization.ByteArraySerializer
+      ACKS: all
+    ports:
+      - "8083:8083"
+    working_dir: /eventsim
+    command: ./bin/eventsim -c configs/Guitar-config.json --continuous --from 200 --nusers 2000 -k 1
+    networks:
+      - data-highway
+    # depends_on:
+    #   broker:
+    #     condition: service_healthy
+
+  akhq:
+    image: tchiotludo/akhq:latest
+    container_name: akhq
+    ports:
+      - "4143:8080"
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            kafka-cluster:
+              properties:
+                bootstrap.servers: "broker:9092"
+    networks:
+      - data-highway
+    # depends_on:
+    #   broker:
+    #     condition: service_healthy
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    restart: always
+    ports:
+      - 9870:9870
+      - 9000:9000
+    volumes:
+      - ../hadoop/hadoop_namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=test
+    env_file:
+      - ../hadoop/hadoop.env
+    networks:
+      data-highway:
+        aliases:
+          - namenode
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode
+    restart: always
+    volumes:
+      - ../hadoop/hadoop_datanode:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    env_file:
+      - ../hadoop/hadoop.env
+    networks:
+      data-highway:
+        aliases:
+          - datanode
+  
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+    container_name: resourcemanager
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode:9864"
+    env_file:
+      - ../hadoop/hadoop.env
+    networks:
+      data-highway:
+        aliases:
+          - resourcemanager
+
+  nodemanager1:
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+    container_name: nodemanager
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode:9864 resourcemanager:8088"
+    env_file:
+      - ../hadoop/hadoop.env
+    networks:
+      data-highway:
+        aliases:
+          - nodemanager
+  
+  historyserver:
+    image: bde2020/hadoop-historyserver:2.0.0-hadoop3.2.1-java8
+    container_name: historyserver
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode:9864 resourcemanager:8088"
+    volumes:
+      - ../hadoop/hadoop_historyserver:/hadoop/yarn/timeline
+    env_file:
+      - ../hadoop/hadoop.env
+    networks:
+      data-highway:
+        aliases:
+          - historyserver
+
+  spark-master:
+    image: bitnami/spark:latest
+    container_name: spark-master
+    hostname: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark
+    ports:
+      - "7077:7077"   # Spark master port
+      - "8080:8080"   # Spark master web UI
+      - "10000:10000"  # Thrift Server port
+    volumes:
+    - ../spark/scripts:/opt/spark-scripts  # Mount your local scripts folder inside the container
+    command: >
+      /bin/bash -c "/opt/bitnami/spark/sbin/start-master.sh &
+                    /opt/bitnami/spark/sbin/start-thriftserver.sh --master spark://spark-master:7077 &
+                    tail -f /dev/null"  # Keep the container running
+    networks:
+      data-highway:
+        aliases:
+          - spark-master
+
+  spark-worker:
+    image: bitnami/spark:latest
+    container_name: spark-worker
+    hostname: spark-worker
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark
+    ports:
+      - "8081:8081"  # Spark worker web UI
+    networks:
+      data-highway:
+        aliases:
+          - spark-worker
+
+
+
+  dbt:
+    image: dbt-spark:1.0.0
+    container_name: dbt
+    volumes:
+      - ../dbt:/usr/app  # Mount your dbt project directory
+      - ../dbt/BigData/profiles.yml:/root/.dbt/profiles.yml
+    environment:
+      - DBT_PROFILES_DIR=/root/.dbt  # Path to dbt profiles.yml
+    networks:
+      - data-highway
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+volumes:
+  kafka:
+  hadoop_namenode:
+  hadoop_datanode:
+  hadoop_historyserver:
+  spark-events:
+  work:
+
+networks:
+  data-highway:
+    driver: bridge
