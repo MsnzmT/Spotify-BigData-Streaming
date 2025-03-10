@@ -1,5 +1,7 @@
 # **Spotify Big Data Streaming**
 
+![Data Flow](docs/image.png)
+
 ## 📌 **Overview**
 Spotify Big Data Management is a data pipeline project designed to process, transform, and analyze event data using big data tools and technologies. It follows a **star schema** approach, ensuring efficient data storage and retrieval for analytics.
 
@@ -36,5 +38,3 @@ Spotify Big Data Management is a data pipeline project designed to process, tran
 ✔️ **Intuitive Data Visualizations** with Metabase  
 
 This project enables efficient **end-to-end data management**, from ingestion to analytics, making it a powerful solution for big data processing.
-
-![Data Flow](docs/image.png)
