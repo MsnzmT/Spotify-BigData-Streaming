@@ -1,0 +1,32 @@
+[0m01:34:46.438589 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001C8884173D0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001C88842FED0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001C88842FFD0>]}
+
+
+============================== 01:34:46.442588 | 1bdd6154-3485-4ed1-ae8a-2774feaed2f7 ==============================
+[0m01:34:46.442588 [info ] [MainThread]: Running with dbt=1.9.2
+[0m01:34:46.443588 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': 'C:\\Users\\msnzm\\.dbt', 'debug': 'False', 'version_check': 'True', 'log_path': 'logs', 'warn_error': 'None', 'fail_fast': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'empty': 'None', 'log_format': 'default', 'invocation_command': 'dbt init', 'static_parser': 'True', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'target_path': 'None', 'introspect': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m01:34:54.853525 [debug] [MainThread]: Starter project path: C:\Users\msnzm\AppData\Local\Programs\Python\Python311\Lib\site-packages\dbt\include\starter_project
+[0m01:34:54.908741 [info ] [MainThread]: 
+Your new dbt project "BigData" was created!
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m01:34:54.910742 [info ] [MainThread]: Setting up your profile.
+[0m01:35:06.834821 [debug] [MainThread]: Spark adapter: Setting pyhive.hive logging to ERROR
+[0m01:35:06.834821 [debug] [MainThread]: Spark adapter: Setting thrift.transport logging to ERROR
+[0m01:35:06.835820 [debug] [MainThread]: Spark adapter: Setting thrift.protocol logging to ERROR
+[0m01:35:21.343219 [info ] [MainThread]: Profile BigData written to C:\Users\msnzm\.dbt\profiles.yml using target's profile_template.yml and your supplied values. Run 'dbt debug' to validate the connection.
+[0m01:35:21.345219 [debug] [MainThread]: Command `dbt init` succeeded at 01:35:21.345219 after 34.97 seconds
+[0m01:35:21.345219 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001C881A0DC90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001C881C204D0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001C881C97D10>]}
+[0m01:35:21.346219 [debug] [MainThread]: Flushing usage events
+[0m01:35:23.195020 [debug] [MainThread]: An error was encountered while trying to flush usage events

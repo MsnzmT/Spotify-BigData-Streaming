@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: hdfs_data
+    schema: default
+    tables:
+      - name: auth_events
+        description: "Authentication events stored in HDFS"
+      - name: listen_events
+        description: "Listening events stored in HDFS"
+      - name: page_view_events
+        description: "Page view events stored in HDFS"
+      - name: status_change_events
+        description: "User status change events stored in HDFS"
