@@ -4,16 +4,14 @@
     file_format='parquet'
 ) }}
 
-WITH songs AS (
-    SELECT DISTINCT 
-        song AS song_name,
+WITH song_data AS (
+    SELECT DISTINCT
+        MD5(CONCAT(artist, song)) AS song_id,  -- Unique identifier
         artist,
+        song,
         duration
     FROM parquet.`hdfs://namenode:9000/data/bronze/listen_events/`
+    WHERE artist IS NOT NULL AND song IS NOT NULL
 )
-SELECT
-    song_name,
-    artist,
-    duration
-FROM songs
-;
+
+SELECT * FROM song_data

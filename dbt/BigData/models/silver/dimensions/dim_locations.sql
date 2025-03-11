@@ -1,32 +1,18 @@
 {{ config(
     materialized='table',
-    location_root='hdfs://namenode:9000/data/silver/',
+    location_root='hdfs://namenode:9000/data/silver/dim_location/',
     file_format='parquet'
 ) }}
 
-WITH loc AS (
-    SELECT DISTINCT 
+WITH location_data AS (
+    SELECT DISTINCT
+        MD5(CONCAT(city, state, zip, lon, lat)) AS location_id,
         city,
         state,
         zip,
-        lat,
-        lon
+        lon,
+        lat
     FROM parquet.`hdfs://namenode:9000/data/bronze/auth_events/`
-    UNION
-    SELECT DISTINCT 
-        city,
-        state,
-        zip,
-        lat,
-        lon
-    FROM parquet.`hdfs://namenode:9000/data/bronze/page_view_events/`
 )
-SELECT 
-    monotonically_increasing_id() AS location_key,
-    city,
-    state,
-    zip,
-    lat,
-    lon
-FROM loc
-;
+
+SELECT * FROM location_data

@@ -8,8 +8,8 @@ SELECT
     ts AS time_key,
     userId AS user_key,
     sessionId AS session_key,
-    song AS song_name,
-    duration,
-    level
+    itemInSession,
+    MD5(CONCAT(artist, song)) AS song_id,  -- FK → dim_songs
+    MD5(CONCAT(city, state, zip, lon, lat)) AS location_id
 FROM parquet.`hdfs://namenode:9000/data/bronze/listen_events/`
 ;
