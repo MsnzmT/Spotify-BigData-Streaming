@@ -8,7 +8,7 @@ WITH song_data AS (
     SELECT
         userId,
         DATE_TRUNC('day', TO_TIMESTAMP(ts)) AS day,
-        COUNT(DISTINCT MD5(CONCAT(artist, song))) AS songs_listened
+        COUNT(DISTINCT CONCAT(artist, song)) AS songs_listened
     FROM {{ ref('fact_listen_events') }}
     GROUP BY userId, day
 )
