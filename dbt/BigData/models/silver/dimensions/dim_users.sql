@@ -1,36 +1,18 @@
 {{ config(
     materialized='table',
-    location_root='hdfs://namenode:9000/data/silver/',
+    location_root='hdfs://namenode:9000/data/silver/dim_user/',
     file_format='parquet'
 ) }}
 
-WITH auth_users AS (
-    SELECT DISTINCT 
-        userId AS user_key,
-        firstName AS first_name,
-        lastName AS last_name,
+WITH user_data AS (
+    SELECT DISTINCT
+        userId,
+        firstName,
+        lastName,
         gender,
-        level,
-        from_unixtime(registration/1000) AS registration_date,
-        city,
-        state
+        registration  -- Now stored in dim_users
     FROM parquet.`hdfs://namenode:9000/data/bronze/auth_events/`
-),
-status_users AS (
-    SELECT DISTINCT 
-        userId AS user_key,
-        firstName AS first_name,
-        lastName AS last_name,
-        gender,
-        level,
-        from_unixtime(registration/1000) AS registration_date,
-        city,
-        state
-    FROM parquet.`hdfs://namenode:9000/data/bronze/status_change_events/`
     WHERE userId IS NOT NULL
 )
 
-SELECT * FROM auth_users
-UNION
-SELECT * FROM status_users
-;
+SELECT * FROM user_data

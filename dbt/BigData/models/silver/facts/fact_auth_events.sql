@@ -8,9 +8,8 @@ SELECT
     ts AS time_key,
     userId AS user_key,
     sessionId AS session_key,
+    itemInSession,
     success,
-    level,
-    city,
-    state
+    MD5(CONCAT(city, state, zip, lon, lat)) AS location_id
 FROM parquet.`hdfs://namenode:9000/data/bronze/auth_events/`
 ;
