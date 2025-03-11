@@ -5,3 +5,4 @@ dbt/BigData/target/
 dbt/BigData/logs/
 dbt/logs
 clickhouse/data
+metabase
