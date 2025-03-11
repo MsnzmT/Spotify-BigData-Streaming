@@ -1,6 +1,6 @@
 {{ config(
     materialized='table',
-    location_root='hdfs://namenode:9000/data/silver/dim_user/',
+    location_root='hdfs://namenode:9000/data/silver/',
     file_format='parquet'
 ) }}
 
@@ -10,7 +10,7 @@ WITH user_data AS (
         firstName,
         lastName,
         gender,
-        registration  -- Now stored in dim_users
+        registration
     FROM parquet.`hdfs://namenode:9000/data/bronze/auth_events/`
     WHERE userId IS NOT NULL
 )

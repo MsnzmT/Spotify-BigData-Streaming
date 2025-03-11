@@ -1,6 +1,6 @@
 {{ config(
     materialized='table',
-    location_root='hdfs://namenode:9000/data/silver/dim_location/',
+    location_root='hdfs://namenode:9000/data/silver/',
     file_format='parquet'
 ) }}
 
