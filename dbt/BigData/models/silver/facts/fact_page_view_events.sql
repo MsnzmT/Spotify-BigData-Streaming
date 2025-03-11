@@ -11,7 +11,7 @@ SELECT
     page,
     auth,
     method,
-    status
+    status,
     MD5(CONCAT(city, state, zip, lon, lat)) AS location_id
 FROM parquet.`hdfs://namenode:9000/data/bronze/page_view_events/`
 ;

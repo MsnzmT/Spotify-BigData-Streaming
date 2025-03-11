@@ -6,15 +6,15 @@
 
 WITH active_users AS (
     SELECT
-        MD5(CONCAT(city, state)) AS location_id,
-        city,  
-        state,  
-        COUNT(DISTINCT userId) AS active_users
-    FROM {{ ref('fact_auth_events') }}
-    WHERE sessionId IS NOT NULL
-    GROUP BY city, state
+        l.location_id,
+        l.city,  
+        l.state,  
+        COUNT(DISTINCT f.user_key) AS active_users
+    FROM {{ ref('fact_auth_events') }} f
+    JOIN {{ ref('dim_locations') }} l ON f.location_id = l.location_id
+    GROUP BY l.location_id, l.city, l.state
 )
 
 SELECT * FROM active_users
-ORDER BY active_users DESC
+ORDER BY active_users DESC;
 

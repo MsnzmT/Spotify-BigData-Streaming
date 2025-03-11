@@ -6,7 +6,7 @@
 
 SELECT 
     ts AS time_key,
-    userId AS user_key,
+    userId,
     sessionId AS session_key,
     itemInSession,
     MD5(CONCAT(artist, song)) AS song_id,  -- FK → dim_songs
