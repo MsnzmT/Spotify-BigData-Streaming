@@ -1,2 +1,5 @@
 hadoop/hadoop_*
 kafka/*
+
+dbt/BigData/target/
+dbt/logs
