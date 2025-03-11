@@ -210,6 +210,91 @@ services:
     networks:
       - data-highway
     entrypoint: ["tail", "-f", "/dev/null"]
+  
+  clickhouse-server:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse-server
+    restart: always
+    ports:
+      - "8123:8123"
+      - "9001:9000"
+      - "9009:9009"
+    volumes:
+      - ../clickhouse/data:/var/lib/clickhouse
+
+    environment:
+      - CLICKHOUSE_DB=spotify
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    networks:
+      data-highway:
+        aliases:
+          - clickhouse-server
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+  
+
+  postgres-metabase:
+    image: postgres:13
+    container_name: postgres-metabase
+    hostname: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=metabase
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=metabaseappdb
+    volumes:
+      - ../metabase/postgres-metabase-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - data-highway
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metabase"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+
+  metabase:
+    image: lucasluanp/metabase-with-clickhouse
+    container_name: metabase
+    hostname: metabase
+    volumes:
+      - ../metabase/dev/urandom:/dev/random:ro
+    ports:
+      - 3001:3001
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabaseappdb
+      MB_DB_PORT: 5432
+      MB_DB_USER: metabase
+      MB_DB_PASS: mysecretpassword
+      MB_DB_HOST: postgres-metabase
+      MB_JETTY_PORT: 3001
+    networks:
+      - data-highway
+    depends_on:
+      postgres-metabase:
+        condition: service_healthy
+      clickhouse-server:
+        condition: service_started
+    healthcheck:
+      test: curl --fail -I http://localhost:3001/api/health || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+
+
 
 volumes:
   kafka:
