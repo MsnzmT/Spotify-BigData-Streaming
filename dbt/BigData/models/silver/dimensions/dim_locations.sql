@@ -22,10 +22,6 @@ WITH loc AS (
     FROM parquet.`hdfs://namenode:9000/data/bronze/page_view_events/`
 )
 SELECT 
-    /* 
-       In Spark you might generate a unique key using a function such as monotonically_increasing_id(). 
-       Adjust as needed if you have a better key generation method.
-    */
     monotonically_increasing_id() AS location_key,
     city,
     state,

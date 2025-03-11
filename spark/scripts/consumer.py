@@ -2,7 +2,6 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import from_json, col
 from pyspark.sql.types import StructType, StructField, StringType, LongType, DoubleType, BooleanType
 
-# Define schemas for Kafka topics
 auth_events_schema = StructType([
     StructField("ts", LongType(), True),
     StructField("sessionId", LongType(), True),
@@ -80,12 +79,10 @@ status_change_events_schema = StructType([
     StructField("registration", LongType(), True)
 ])
 
-# Initialize Spark session
 spark = SparkSession.builder \
     .appName("KafkaToHDFS") \
     .getOrCreate()
 
-# Read from Kafka
 df = spark \
     .readStream \
     .format("kafka") \
@@ -94,10 +91,8 @@ df = spark \
     .option("startingOffsets", "earliest") \
     .load()
 
-# Parse the value column from Kafka
 parsed_df = df.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)", "topic")
 
-# Process each topic separately
 auth_events_df = parsed_df.filter(col("topic") == "auth_events") \
     .select(from_json(col("value"), auth_events_schema).alias("data")) \
     .select("data.*")
@@ -114,7 +109,6 @@ status_change_events_df = parsed_df.filter(col("topic") == "status_change_events
     .select(from_json(col("value"), status_change_events_schema).alias("data")) \
     .select("data.*")
 
-# Write each DataFrame to HDFS
 auth_events_query = auth_events_df.writeStream \
     .format("parquet") \
     .option("path", "hdfs://namenode:9000/data/bronze/auth_events") \
@@ -139,7 +133,6 @@ status_change_events_query = status_change_events_df.writeStream \
     .option("checkpointLocation", "hdfs://namenode:9000/checkpoints/status_change_events") \
     .start()
 
-# Wait for the streams to finish
 auth_events_query.awaitTermination()
 listen_events_query.awaitTermination()
 page_view_events_query.awaitTermination()

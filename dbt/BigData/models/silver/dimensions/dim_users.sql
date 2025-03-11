@@ -30,7 +30,6 @@ status_users AS (
     WHERE userId IS NOT NULL
 )
 
--- Combine the two sources (if duplicate rows occur, UNION will remove them)
 SELECT * FROM auth_users
 UNION
 SELECT * FROM status_users
